@@ -2,7 +2,7 @@ name: Deploy static content to Pages
 
 on:
   push:
-    branches: ["main"]   # 改为你的默认分支
+    branches: [feature/feedback-system]  # 改为你的默认分支
   workflow_dispatch:
 
 permissions:
