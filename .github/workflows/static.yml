@@ -2,7 +2,7 @@ name: Deploy static content to Pages
 
 on:
   push:
-    branches: [feature/feedback-system]  # 改为你的默认分支
+    branches: ["feature/feedback-system"]
   workflow_dispatch:
 
 permissions:
@@ -23,20 +23,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-      - name: Install dependencies
-        run: npm install
-      - name: Build
-        run: npm run build
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './dist'   # 根据实际构建输出目录修改
+          path: '.'   # 上传整个仓库根目录
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
