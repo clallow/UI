@@ -3,11 +3,11 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   Text,
   KeyboardAvoidingView,
   Platform,
   Animated,
+  StatusBar,
 } from 'react-native';
 import {
   TextInput,
@@ -17,6 +17,7 @@ import {
 } from 'react-native-paper';
 import { useForm, Controller } from 'react-hook-form';
 import axios from 'axios';
+import { theme } from '../styles/theme';
 
 interface FormData {
   name: string;
@@ -29,16 +30,25 @@ const FeedbackScreen = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const fadeAnim = useState(new Animated.Value(0))[0];
+  const scaleAnim = useState(new Animated.Value(0.95))[0];
 
   React.useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 500,
-      useNativeDriver: true,
-    }).start();
-  }, [fadeAnim]);
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeAnim, scaleAnim]);
 
-  const { control, handleSubmit, formState: { errors } } = useForm<FormData>();
+  const { control, handleSubmit, reset, formState: { errors } } = useForm<FormData>();
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
@@ -47,9 +57,7 @@ const FeedbackScreen = () => {
     try {
       await axios.post('http://localhost:3000/api/feedback', data);
       setSuccess('反馈提交成功！');
-      // 重置表单
-      // @ts-ignore
-      handleSubmit.reset();
+      reset();
     } catch (err) {
       setError('提交失败，请稍后重试');
       console.error(err);
@@ -59,7 +67,8 @@ const FeedbackScreen = () => {
   };
 
   return (
-    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+    <Animated.View style={[styles.container, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background.primary} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoidingView}
@@ -68,11 +77,13 @@ const FeedbackScreen = () => {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.formContainer}>
+          <View style={styles.headerContainer}>
             <Text style={styles.title}>提交反馈</Text>
             <Text style={styles.subtitle}>请填写以下信息，我们会认真考虑您的建议</Text>
+          </View>
 
-            <View style={styles.inputContainer}>
+          <View style={styles.formContainer}>
+            <View style={styles.inputGroup}>
               <Controller
                 control={control}
                 name="name"
@@ -86,6 +97,16 @@ const FeedbackScreen = () => {
                     style={styles.input}
                     mode="outlined"
                     error={!!errors.name}
+                    theme={{
+                      colors: {
+                        primary: theme.colors.primary,
+                        placeholder: theme.colors.text.tertiary,
+                        text: theme.colors.text.primary,
+                        background: theme.colors.glass.background,
+                      },
+                    }}
+                    outlineColor={theme.colors.glass.border}
+                    selectionColor={theme.colors.primary}
                   />
                 )}
               />
@@ -94,7 +115,7 @@ const FeedbackScreen = () => {
               )}
             </View>
 
-            <View style={styles.inputContainer}>
+            <View style={styles.inputGroup}>
               <Controller
                 control={control}
                 name="email"
@@ -115,6 +136,16 @@ const FeedbackScreen = () => {
                     mode="outlined"
                     keyboardType="email-address"
                     error={!!errors.email}
+                    theme={{
+                      colors: {
+                        primary: theme.colors.primary,
+                        placeholder: theme.colors.text.tertiary,
+                        text: theme.colors.text.primary,
+                        background: theme.colors.glass.background,
+                      },
+                    }}
+                    outlineColor={theme.colors.glass.border}
+                    selectionColor={theme.colors.primary}
                   />
                 )}
               />
@@ -123,7 +154,7 @@ const FeedbackScreen = () => {
               )}
             </View>
 
-            <View style={styles.inputContainer}>
+            <View style={styles.inputGroup}>
               <Controller
                 control={control}
                 name="content"
@@ -139,6 +170,16 @@ const FeedbackScreen = () => {
                     multiline
                     numberOfLines={5}
                     error={!!errors.content}
+                    theme={{
+                      colors: {
+                        primary: theme.colors.primary,
+                        placeholder: theme.colors.text.tertiary,
+                        text: theme.colors.text.primary,
+                        background: theme.colors.glass.background,
+                      },
+                    }}
+                    outlineColor={theme.colors.glass.border}
+                    selectionColor={theme.colors.primary}
                   />
                 )}
               />
@@ -147,43 +188,53 @@ const FeedbackScreen = () => {
               )}
             </View>
 
-            <TouchableOpacity
-              activeOpacity={0.8}
+            <Button
+              mode="contained"
               onPress={handleSubmit(onSubmit)}
-              style={styles.submitButtonContainer}
+              style={styles.submitButton}
+              labelStyle={styles.submitButtonLabel}
+              disabled={loading}
+              theme={{
+                colors: {
+                  primary: theme.colors.primary,
+                },
+              }}
             >
-              <Button
-                mode="contained"
-                style={styles.submitButton}
-                labelStyle={styles.submitButtonLabel}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator color="white" size="small" />
-                ) : (
-                  '提交反馈'
-                )}
-              </Button>
-            </TouchableOpacity>
-
-            <Snackbar
-              visible={!!error}
-              onDismiss={() => setError('')}
-              duration={3000}
-              style={styles.snackbarError}
-            >
-              {error}
-            </Snackbar>
-
-            <Snackbar
-              visible={!!success}
-              onDismiss={() => setSuccess('')}
-              duration={3000}
-              style={styles.snackbarSuccess}
-            >
-              {success}
-            </Snackbar>
+              {loading ? (
+                <ActivityIndicator color="white" size="small" />
+              ) : (
+                '提交反馈'
+              )}
+            </Button>
           </View>
+
+          <Snackbar
+            visible={!!error}
+            onDismiss={() => setError('')}
+            duration={3000}
+            style={styles.snackbarError}
+            theme={{
+              colors: {
+                surface: theme.colors.error,
+              },
+            }}
+          >
+            {error}
+          </Snackbar>
+
+          <Snackbar
+            visible={!!success}
+            onDismiss={() => setSuccess('')}
+            duration={3000}
+            style={styles.snackbarSuccess}
+            theme={{
+              colors: {
+                surface: theme.colors.success,
+              },
+            }}
+          >
+            {success}
+          </Snackbar>
         </ScrollView>
       </KeyboardAvoidingView>
     </Animated.View>
@@ -193,77 +244,76 @@ const FeedbackScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: theme.colors.background.primary,
   },
   keyboardAvoidingView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingVertical: 20,
+    paddingVertical: theme.spacing.xl,
+  },
+  headerContainer: {
+    paddingHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.xl,
+  },
+  title: {
+    fontSize: theme.typography.h1.fontSize,
+    fontWeight: theme.typography.h1.fontWeight,
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.sm,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: theme.typography.body.fontSize,
+    color: theme.colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: theme.typography.body.lineHeight,
   },
   formContainer: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: theme.spacing.lg,
     maxWidth: 500,
     alignSelf: 'center',
     width: '100%',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#64748b',
-    marginBottom: 32,
-    textAlign: 'center',
-  },
-  inputContainer: {
-    marginBottom: 20,
+  inputGroup: {
+    marginBottom: theme.spacing.lg,
   },
   input: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.18,
-    shadowRadius: 1.0,
+    backgroundColor: theme.colors.glass.background,
+    borderRadius: theme.borderRadius.lg,
+    ...theme.shadows.md,
   },
   textArea: {
-    height: 150,
+    minHeight: 120,
   },
   errorText: {
-    color: '#ef4444',
-    fontSize: 12,
-    marginTop: 4,
-    marginLeft: 12,
-  },
-  submitButtonContainer: {
-    marginTop: 24,
-    marginBottom: 16,
+    color: theme.colors.error,
+    fontSize: theme.typography.caption.fontSize,
+    marginTop: theme.spacing.xs,
+    marginLeft: theme.spacing.md,
   },
   submitButton: {
-    backgroundColor: '#6366f1',
-    borderRadius: 8,
-    paddingVertical: 6,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.borderRadius.xl,
+    paddingVertical: theme.spacing.sm,
+    marginTop: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+    ...theme.shadows.md,
   },
   submitButtonLabel: {
-    fontSize: 16,
+    fontSize: theme.typography.body.fontSize,
     fontWeight: '600',
+    color: theme.colors.text.primary,
   },
   snackbarError: {
-    backgroundColor: '#ef4444',
+    backgroundColor: theme.colors.error,
+    borderRadius: theme.borderRadius.md,
   },
   snackbarSuccess: {
-    backgroundColor: '#10b981',
+    backgroundColor: theme.colors.success,
+    borderRadius: theme.borderRadius.md,
   },
 });
 
